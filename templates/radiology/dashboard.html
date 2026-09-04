@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="fa-solid fa-x-ray text-primary me-2"></i>Radiology Department & Imaging AI</h3>
+        <p class="text-muted mb-0">Diagnostic imaging worklist with automated bone fracture & anatomical AI interpretation.</p>
+    </div>
+    <a href="{{ url_for('radiology.interactive_scanner') }}" class="btn btn-primary shadow-sm">
+        <i class="fa-solid fa-microchip me-2"></i>Launch Real-Time AI X-Ray Scanner
+    </a>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 border-start border-primary border-4 shadow-sm p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase small mb-1">Total Imaging Orders</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ total_orders }}</h3>
+                </div>
+                <i class="fa-solid fa-layer-group fa-2x text-primary opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 border-start border-warning border-4 shadow-sm p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase small mb-1">Pending AI / Review</h6>
+                    <h3 class="fw-bold mb-0 text-warning">{{ pending_orders }}</h3>
+                </div>
+                <i class="fa-solid fa-hourglass-half fa-2x text-warning opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 border-start border-success border-4 shadow-sm p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase small mb-1">Completed & Reported</h6>
+                    <h3 class="fw-bold mb-0 text-success">{{ completed_orders }}</h3>
+                </div>
+                <i class="fa-solid fa-circle-check fa-2x text-success opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Orders Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-dark fw-bold">
+            <i class="fa-solid fa-list-check me-2 text-primary"></i>Radiology Intake Worklist
+        </h5>
+        <div class="btn-group btn-group-sm">
+            <a href="{{ url_for('radiology.dashboard', status='all') }}" class="btn btn-outline-secondary {% if status_filter == 'all' %}active{% endif %}">All</a>
+            <a href="{{ url_for('radiology.dashboard', status='Ordered') }}" class="btn btn-outline-secondary {% if status_filter == 'Ordered' %}active{% endif %}">Pending</a>
+            <a href="{{ url_for('radiology.dashboard', status='Completed') }}" class="btn btn-outline-secondary {% if status_filter == 'Completed' %}active{% endif %}">Completed</a>
+        </div>
+    </div>
+    <div class="table-responsive p-3">
+        <table class="table table-hover align-middle">
+            <thead class="table-light text-secondary">
+                <tr>
+                    <th>Order #</th>
+                    <th>Patient ID</th>
+                    <th>Imaging Modality / Study</th>
+                    <th>Date Ordered</th>
+                    <th>Status</th>
+                    <th>AI Diagnostic Summary</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if orders %}
+                    {% for order in orders %}
+                    <tr>
+                        <td class="fw-bold">#RAD-{{ order.id }}</td>
+                        <td>Patient #{{ order.patient_id }}</td>
+                        <td>
+                            <span class="fw-semibold text-dark">{{ order.imaging_type }}</span>
+                        </td>
+                        <td class="small text-muted">{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else 'N/A' }}</td>
+                        <td>
+                            {% if order.status == 'Completed' %}
+                                <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Completed</span>
+                            {% elif order.status == 'Ordered' %}
+                                <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i>Pending Scan</span>
+                            {% else %}
+                                <span class="badge bg-info text-dark">{{ order.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="small">
+                            {% if order.findings %}
+                                <span class="text-truncate d-inline-block" style="max-width: 280px;" title="{{ order.findings }}">
+                                    {{ order.findings }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted fst-italic">Awaiting imaging interpretation</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ url_for('radiology.order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fa-solid fa-eye me-1"></i>View / Process
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="fa-solid fa-inbox fa-2x mb-2 d-block opacity-50"></i>
+                            No radiology orders found. Use the scanner tool or create an order from the doctor dashboard.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

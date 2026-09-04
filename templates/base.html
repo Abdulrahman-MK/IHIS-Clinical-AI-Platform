@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iHIS Ecosystem Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { overflow-x: hidden; background-color: #f8f9fa; }
+        .sidebar { min-height: 100vh; background: #212529; color: white; transition: all 0.3s; }
+        .sidebar .nav-link { color: rgba(255,255,255,0.75); margin-bottom: 10px; border-radius: 4px; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { color: white; background: #0d6efd; }
+        .main-content { min-height: 100vh; background-color: #f4f6f9; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse p-3 shadow">
+                <div class="d-flex align-items-center mb-4 text-white text-decoration-none">
+                    <i class="fa-solid fa-heart-pulse fa-2x me-2 text-primary"></i>
+                    <span class="fs-4 fw-bold">iHIS v2026</span>
+                </div>
+                <hr>
+                <ul class="nav nav-pills flex-column mb-auto">
+                    <li class="nav-item">
+                        <a href="/portal/doctor" class="nav-link {% if request.path == '/portal/doctor' %}active{% endif %}">
+                            <i class="fa-solid fa-chart-pie me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link"><i class="fa-solid fa-folder-open me-2"></i> Records Matrix</a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link"><i class="fa-solid fa-flask me-2"></i> Labs & Orders</a>
+                    </li>
+                    <!-- Pharmacy Review added here -->
+                    <li>
+                        <a href="/pharmacy/review" class="nav-link {% if '/pharmacy' in request.path %}active{% endif %}">
+                            <i class="fa-solid fa-capsules me-2"></i> Clinical Safety Review
+                        </a>
+                    </li>
+                    <!-- Radiology Department AI -->
+                    <li>
+                        <a href="{{ url_for('radiology.dashboard') }}" class="nav-link {% if '/radiology' in request.path %}active{% endif %}">
+                            <i class="fa-solid fa-x-ray me-2"></i> Radiology & Imaging AI
+                        </a>
+                    </li>
+                </ul>
+                <hr>
+                <div class="dropdown">
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger w-100">
+                        <i class="fa-solid fa-right-from-bracket me-2"></i> Secure Logout
+                    </a>
+                </div>
+            </nav>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2 text-dark fw-semibold">Clinical Management System</h1>
+                    <div class="badge bg-secondary p-2 shadow-sm">
+                        <i class="fa-solid fa-user-shield me-1"></i> Mode: {{ current_user.role.name }}
+                    </div>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

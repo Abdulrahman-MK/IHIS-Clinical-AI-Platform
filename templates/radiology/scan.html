@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="fa-solid fa-microchip text-primary me-2"></i>AI Bone Fracture & Anatomical Scanner</h3>
+        <p class="text-muted mb-0">Offline YOLO-powered Computer Vision Engine for rapid skeletal triage and fracture localization.</p>
+    </div>
+    <a href="{{ url_for('radiology.dashboard') }}" class="btn btn-outline-secondary">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Worklist
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Upload & Controls -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 text-dark fw-bold"><i class="fa-solid fa-cloud-arrow-up me-2 text-primary"></i>Image Acquisition</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('radiology.interactive_scanner') }}" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Upload Digital X-Ray (DICOM / JPEG / PNG)</label>
+                        <input type="file" name="scan_file" class="form-control" accept="image/*">
+                    </div>
+
+                    {% if sample_images %}
+                    <div class="mb-3">
+                        <div class="text-center my-2 text-muted small fw-semibold">— OR SELECT DEMO X-RAY —</div>
+                        <label class="form-label fw-semibold small">Preloaded Clinical Case Library</label>
+                        <select name="sample_image" class="form-select form-select-sm">
+                            <option value="">-- Choose Sample Case --</option>
+                            {% for sample in sample_images %}
+                                <option value="{{ sample }}">{{ sample }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">
+                        <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Run AI Diagnostics
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- AI Engine Specs Card -->
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body">
+                <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-circle-info text-info me-2"></i>Engine Capabilities</h6>
+                <ul class="list-unstyled small text-secondary mb-0">
+                    <li class="mb-1"><i class="fa-solid fa-check text-success me-2"></i><strong>Offline Inference:</strong> Local YOLO weights (no cloud latency).</li>
+                    <li class="mb-1"><i class="fa-solid fa-check text-success me-2"></i><strong>Anatomy Detection:</strong> Hand/Wrist, Hip/Pelvis, Leg, Shoulder.</li>
+                    <li class="mb-1"><i class="fa-solid fa-check text-success me-2"></i><strong>Pathology Detection:</strong> Cortical bone fracture discontinuity.</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i><strong>Hardware Detection:</strong> Orthopedic screws, pins & fixation plates.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Visual Findings & Clinical Report -->
+    <div class="col-lg-8">
+        {% if prediction %}
+        <!-- Diagnostic Summary Header -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="fa-solid fa-file-waveform text-primary me-2"></i>Diagnostic Assessment Report
+                </h5>
+                <span class="badge {% if prediction.has_fracture %}bg-danger{% else %}bg-success{% endif %} px-3 py-2 fs-6">
+                    {% if prediction.has_fracture %}
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i>{{ prediction.triage_level }}
+                    {% else %}
+                        <i class="fa-solid fa-circle-check me-1"></i>{{ prediction.triage_level }}
+                    {% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                <!-- Metrics Badges Row -->
+                <div class="row g-3 mb-4 text-center">
+                    <div class="col-md-4">
+                        <div class="p-3 rounded bg-light border">
+                            <span class="text-muted small text-uppercase d-block mb-1">Fracture Status</span>
+                            {% if prediction.has_fracture %}
+                                <span class="fw-bold text-danger fs-5"><i class="fa-solid fa-bone-break me-1"></i>Positive ({{ prediction.fracture_confidence }}%)</span>
+                            {% else %}
+                                <span class="fw-bold text-success fs-5"><i class="fa-solid fa-check me-1"></i>No Fracture Detected</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded bg-light border">
+                            <span class="text-muted small text-uppercase d-block mb-1">Anatomical Location</span>
+                            <span class="fw-bold text-dark fs-5"><i class="fa-solid fa-bone me-1 text-primary"></i>{{ prediction.anatomy }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded bg-light border">
+                            <span class="text-muted small text-uppercase d-block mb-1">Orthopedic Hardware</span>
+                            {% if prediction.hardware_detected %}
+                                <span class="fw-bold text-warning fs-5"><i class="fa-solid fa-screwdriver-wrench me-1"></i>Identified</span>
+                            {% else %}
+                                <span class="fw-bold text-secondary fs-5">None Visualized</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Side-by-Side Visual Comparison -->
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-images text-secondary me-2"></i>Radiographic Comparison View</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="card border">
+                            <div class="card-header bg-light py-2 text-center small fw-semibold text-secondary">
+                                Raw Input Radiograph
+                            </div>
+                            <div class="p-2 text-center bg-black" style="min-height: 280px; display: flex; align-items: center; justify-content: center;">
+                                {% if original_url %}
+                                    <img src="{{ original_url }}" class="img-fluid rounded" style="max-height: 380px; object-fit: contain;" alt="Original Scan">
+                                {% else %}
+                                    <span class="text-muted">No scan image available</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border border-primary">
+                            <div class="card-header bg-primary text-white py-2 text-center small fw-semibold">
+                                <i class="fa-solid fa-robot me-1"></i>AI Annotated Bounding Box Map
+                            </div>
+                            <div class="p-2 text-center bg-black" style="min-height: 280px; display: flex; align-items: center; justify-content: center;">
+                                {% if annotated_url %}
+                                    <img src="{{ annotated_url }}" class="img-fluid rounded" style="max-height: 380px; object-fit: contain;" alt="AI Annotated Scan">
+                                {% else %}
+                                    <span class="text-muted">Annotation failed</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Automated Clinical Impression -->
+                <div class="p-3 rounded bg-light border mb-3">
+                    <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-stethoscope me-2"></i>Radiological Impression</h6>
+                    <p class="mb-0 text-dark">{{ prediction.clinical_impression }}</p>
+                </div>
+
+                <!-- Recommendations -->
+                {% if prediction.recommendations %}
+                <div class="p-3 rounded bg-light border">
+                    <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-clipboard-list me-2 text-success"></i>Clinical Directives & Next Steps</h6>
+                    <ul class="mb-0 text-secondary small">
+                        {% for rec in prediction.recommendations %}
+                            <li>{{ rec }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- Detailed Detections Table -->
+                {% if prediction.detections %}
+                <div class="mt-4">
+                    <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-table-list me-2 text-secondary"></i>Detected Features Breakdown</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Detected Class</th>
+                                    <th>AI Confidence</th>
+                                    <th>Bounding Box [X1, Y1, X2, Y2]</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for det in prediction.detections %}
+                                <tr>
+                                    <td>
+                                        {% if det.class_name == 'fractured' %}
+                                            <span class="badge bg-danger">Fracture</span>
+                                        {% elif det.class_name == 'hardware' %}
+                                            <span class="badge bg-warning text-dark">Hardware</span>
+                                        {% else %}
+                                            <span class="badge bg-primary">{{ det.class_name|capitalize }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="fw-semibold">{{ det.confidence }}%</td>
+                                    <td class="text-muted small font-monospace">{{ det.box }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="card border-0 shadow-sm p-5 text-center">
+            <div class="my-5">
+                <i class="fa-solid fa-x-ray fa-4x text-primary opacity-50 mb-3"></i>
+                <h4 class="fw-bold text-dark">No X-Ray Currently Loaded</h4>
+                <p class="text-muted mx-auto" style="max-width: 480px;">
+                    Upload a patient radiograph or select one of the preloaded clinical cases on the left to trigger real-time AI fracture localization and bone identification.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

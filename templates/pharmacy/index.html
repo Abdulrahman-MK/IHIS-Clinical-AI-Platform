@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h3 class="fw-bold mb-4">💊 Clinical Medication Safety Review</h3>
+
+    <div class="row g-4">
+        <!-- Input Form -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white fw-semibold">
+                    👤 Patient Context Parameters
+                </div>
+                <div class="card-body">
+                    <form action="/pharmacy/review" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Patient Name</label>
+                            <input type="text" name="name" class="form-control" value="{{ (patient_data and patient_data.get('name')) or 'Jane Doe' }}" required>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label fw-semibold">Age</label>
+                                <input type="number" name="age" class="form-control" value="{{ (patient_data and patient_data.get('age')) or '64' }}">
+                            </div>
+                            <div class="col">
+                                <label class="form-label fw-semibold">Sex</label>
+                                <input type="text" name="sex" class="form-control" value="{{ (patient_data and patient_data.get('sex')) or 'Female' }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">eGFR (mL/min/1.73m²)</label>
+                            <input type="text" name="egfr" class="form-control" value="{{ (patient_data and patient_data.get('egfr')) or '45' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Current/Proposed Medications</label>
+                            <textarea name="medications" class="form-control" rows="4">{{ (patient_data and patient_data.get('medications')) or "Lisinopril 20mg Daily\nMetformin 1000mg BID\nIbuprofen 800mg TID PRN" }}</textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
+                            ▶ Run Clinical Review
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Output Assessment Card -->
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-primary text-white fw-semibold">
+                    📋 Safety Assessment Output
+                </div>
+                <div class="card-body bg-white overflow-auto" style="min-height: 400px;">
+                    {% if review_result %}
+                        <div id="formatted-review-content"></div>
+                        <!-- Load Marked.js to format markdown response -->
+                        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+                        <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const rawText = {{ review_result | tojson }};
+                                document.getElementById('formatted-review-content').innerHTML = marked.parse(rawText);
+                            });
+                        </script>
+                    {% else %}
+                        <div class="text-center text-muted py-5 my-5">
+                            <div class="fs-1 mb-2">💊</div>
+                            <h5 class="fw-normal">No Active Safety Review</h5>
+                            <p class="small text-secondary mb-0">Fill in patient parameters on the left panel and click <strong>Run Clinical Review</strong>.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

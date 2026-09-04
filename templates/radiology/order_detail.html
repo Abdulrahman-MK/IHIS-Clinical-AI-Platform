@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">
+            <i class="fa-solid fa-file-medical text-primary me-2"></i>Radiology Order #RAD-{{ order.id }}
+        </h3>
+        <p class="text-muted mb-0">Study: <span class="fw-semibold text-dark">{{ order.imaging_type }}</span> | Status: <span class="badge {% if order.status == 'Completed' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ order.status }}</span></p>
+    </div>
+    <a href="{{ url_for('radiology.dashboard') }}" class="btn btn-outline-secondary">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Worklist
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Patient Info Card -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 text-dark fw-bold"><i class="fa-solid fa-hospital-user text-primary me-2"></i>Patient Information</h5>
+            </div>
+            <div class="card-body">
+                {% if patient %}
+                    <h5 class="fw-bold text-dark">{{ patient.last_name }}, {{ patient.first_name }}</h5>
+                    <ul class="list-unstyled small text-secondary mt-3 mb-0">
+                        <li class="mb-2"><strong>Patient ID:</strong> #{{ patient.id }}</li>
+                        <li class="mb-2"><strong>Date of Birth:</strong> {{ patient.date_of_birth }}</li>
+                        <li class="mb-2"><strong>Blood Group:</strong> <span class="badge bg-info text-dark">{{ patient.blood_type }}</span></li>
+                        <li class="mb-2"><strong>Known Allergies:</strong> <span class="text-danger">{{ patient.allergies or 'None' }}</span></li>
+                        <li><strong>Chronic Conditions:</strong> {{ patient.chronic_diseases or 'None' }}</li>
+                    </ul>
+                {% else %}
+                    <p class="text-muted small">Patient record not found.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Upload & Run AI Card -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0 text-dark fw-bold"><i class="fa-solid fa-upload text-primary me-2"></i>Upload & Analyze Scan</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('radiology.order_detail', order_id=order.id) }}" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Upload Patient X-Ray Image</label>
+                        <input type="file" name="scan_file" class="form-control form-control-sm" accept="image/*" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                        <i class="fa-solid fa-microchip me-2"></i>Process Scan with AI
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scan & Findings Card -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-dark fw-bold"><i class="fa-solid fa-stethoscope text-primary me-2"></i>Radiologist & AI Findings</h5>
+            </div>
+            <div class="card-body">
+                {% if order.image_url %}
+                    <div class="text-center bg-black p-3 rounded mb-4">
+                        <img src="{{ url_for('radiology.serve_upload', filename=order.image_url) }}" class="img-fluid rounded" style="max-height: 420px; object-fit: contain;" alt="Order Scan">
+                    </div>
+                {% else %}
+                    <div class="alert alert-info d-flex align-items-center mb-4">
+                        <i class="fa-solid fa-circle-info fa-2x me-3"></i>
+                        <div>
+                            <strong>No scan attached yet.</strong> Upload an X-ray image using the form on the left to run automatic bone & fracture AI analysis.
+                        </div>
+                    </div>
+                {% endif %}
+
+                <h6 class="fw-bold text-dark mb-2">Clinical Findings & Impression:</h6>
+                <div class="p-3 bg-light rounded border">
+                    {% if order.findings %}
+                        <pre class="mb-0 font-monospace small" style="white-space: pre-wrap; font-family: inherit;">{{ order.findings }}</pre>
+                    {% else %}
+                        <span class="text-muted fst-italic">No findings entered.</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
