@@ -1,155 +1,363 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row g-4">
-    <div class="col-md-4">
-        <div class="card border-0 border-start border-primary border-4 shadow-sm p-3">
+<!-- Top Metrics & Action Row -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-user-doctor text-primary me-2"></i>Doctor Clinical Dashboard</h3>
+        <p class="text-muted mb-0">Active patient census, clinical examination sheets, and diagnostic intake worklist.</p>
+    </div>
+    <button class="btn btn-primary shadow-sm py-2 px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#addPatientModal">
+        <i class="fa-solid fa-user-plus me-2"></i>Onboard New Patient
+    </button>
+</div>
+
+<!-- Statistical Overview Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 border-start border-primary border-4 shadow-sm p-3 bg-white">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h6 class="text-muted text-uppercase small">Total Active Patients</h6>
-                    <h3 class="fw-bold mb-0">{{ patients|length }}</h3>
+                    <h6 class="text-muted text-uppercase small mb-1">Active Patients</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ patients|length }}</h3>
                 </div>
                 <i class="fa-solid fa-hospital-user fa-2x text-primary opacity-50"></i>
             </div>
         </div>
     </div>
+    <div class="col-md-3">
+        <div class="card border-0 border-start border-success border-4 shadow-sm p-3 bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase small mb-1">Clinical Records Matrix</h6>
+                    <a href="{{ url_for('clinical.records_matrix') }}" class="small fw-bold text-success text-decoration-none">
+                        Browse EMR Archive &rarr;
+                    </a>
+                </div>
+                <i class="fa-solid fa-folder-open fa-2x text-success opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 border-start border-warning border-4 shadow-sm p-3 bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase small mb-1">Labs & Orders Hub</h6>
+                    <a href="{{ url_for('orders.orders_hub') }}" class="small fw-bold text-warning text-decoration-none">
+                        Manage Orders &rarr;
+                    </a>
+                </div>
+                <i class="fa-solid fa-flask fa-2x text-warning opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 border-start border-info border-4 shadow-sm p-3 bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase small mb-1">Radiology AI Engine</h6>
+                    <a href="{{ url_for('radiology.interactive_scanner') }}" class="small fw-bold text-info text-decoration-none">
+                        AI X-Ray Scanner &rarr;
+                    </a>
+                </div>
+                <i class="fa-solid fa-x-ray fa-2x text-info opacity-50"></i>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="card border-0 shadow-sm mt-4">
-    <div class="card-header bg-white border-0 py-3">
-        <h5 class="mb-0 text-dark fw-bold"><i class="fa-solid fa-list-check me-2 text-primary"></i>Patient Registry Intake Worklist</h5>
+<!-- Patient Registry Intake Worklist -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-dark fw-bold">
+            <i class="fa-solid fa-list-check me-2 text-primary"></i>Patient Registry & Encounter Worklist
+        </h5>
+        <span class="badge bg-light text-secondary border px-3 py-2">
+            Showing {{ patients|length }} Registered Patients
+        </span>
     </div>
     <div class="table-responsive p-3">
         <table class="table table-hover align-middle">
             <thead class="table-light text-secondary">
                 <tr>
                     <th>Patient Identification</th>
-                    <th>Date of Birth</th>
+                    <th>Age / Sex</th>
                     <th>Blood Group</th>
-                    <th>Known Conditions</th>
+                    <th>Drug Sensitivities & Allergies</th>
+                    <th>Chronic Conditions</th>
                     <th class="text-end">Clinical Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {% for patient in patients %}
-                <tr>
-                    <td class="fw-semibold">{{ patient.last_name }}, {{ patient.first_name }}</td>
-                    <td>{{ patient.date_of_birth }}</td>
-                    <td><span class="badge bg-info text-dark">{{ patient.blood_type }}</span></td>
-                    <td class="text-danger small"><i class="fa-solid fa-triangle-exclamation me-1"></i> {{ patient.allergies }}</td>
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#soapModal{{ patient.id }}">
-                            <i class="fa-solid fa-notes-medical me-1"></i> Add SOAP Entry
-                        </button>
-                    </td>
-                </tr>
-
-                <div class="modal fade" id="soapModal{{ patient.id }}" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header bg-primary text-white">
-                                <h5 class="modal-title">New SOAP Progress Note: {{ patient.first_name }} {{ patient.last_name }}</h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                {% if patients %}
+                    {% for patient in patients %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-dark">{{ patient.last_name }}, {{ patient.first_name }}</div>
+                            <small class="text-muted">ID: #{{ patient.id }} | DOB: {{ patient.date_of_birth }}</small>
+                        </td>
+                        <td>
+                            <span class="fw-semibold text-dark">{{ patient.age }} yrs</span>
+                            <span class="badge bg-secondary ms-1">{{ patient.gender or 'Not Specified' }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info text-dark">{{ patient.blood_type or 'N/A' }}</span>
+                        </td>
+                        <td>
+                            {% if patient.drug_sensitivities and patient.drug_sensitivities != 'None Known' and patient.drug_sensitivities != 'None Reported' %}
+                                <div class="badge bg-danger text-wrap text-start p-2 mb-1" style="max-width: 220px;">
+                                    <i class="fa-solid fa-triangle-exclamation me-1"></i><strong>Sensitive to:</strong> {{ patient.drug_sensitivities }}
+                                </div>
+                            {% endif %}
+                            {% if patient.allergies and patient.allergies != 'None Reported' and patient.allergies != 'None' %}
+                                <div class="small text-muted"><i class="fa-solid fa-shield-virus me-1 text-warning"></i>{{ patient.allergies }}</div>
+                            {% endif %}
+                            {% if (not patient.drug_sensitivities or patient.drug_sensitivities == 'None Known') and (not patient.allergies or patient.allergies == 'None Reported') %}
+                                <span class="text-muted small">NKDA (No Known Allergies)</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-secondary">
+                            {{ patient.chronic_diseases or 'None Reported' }}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('clinical.examination_sheet', patient_id=patient.id) }}" class="btn btn-primary" title="Start Clinical Examination Sheet">
+                                    <i class="fa-solid fa-stethoscope me-1"></i>Exam Sheet
+                                </a>
+                                <a href="{{ url_for('clinical.patient_records', patient_id=patient.id) }}" class="btn btn-outline-secondary" title="View Full Patient EMR">
+                                    <i class="fa-solid fa-folder-open me-1"></i>EMR
+                                </a>
+                                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#soapModal{{ patient.id }}" title="Add SOAP Progress Note">
+                                    <i class="fa-solid fa-notes-medical"></i>
+                                </button>
                             </div>
-                            <form action="{{ url_for('clinical.add_soap_note', patient_id=patient.id) }}" method="POST">
-                                <div class="modal-body">
-                                    
-                                    <div class="bg-light border rounded p-3 mb-4 shadow-sm">
-                                        <h6 class="text-primary fw-bold"><i class="fa-solid fa-robot me-2"></i>iHIS Real-Time AI Diagnostics Assistant</h6>
-                                        <p class="text-muted small">Input standard patient vitals below and trigger real-time algorithmic diagnostics before saving.</p>
-                                        <div class="row g-2 mb-3">
-                                            <div class="col-6">
-                                                <label class="small fw-semibold">Heart Rate (BPM)</label>
-                                                <input type="number" id="ai_hr_{{ patient.id }}" class="form-control form-control-sm" value="82">
-                                            </div>
-                                            <div class="col-6">
-                                                <label class="small fw-semibold">Temperature (Â°C)</label>
-                                                <input type="number" step="0.1" id="ai_temp_{{ patient.id }}" class="form-control form-control-sm" value="37.2">
-                                            </div>
-                                        </div>
-                                        <button type="button" class="btn btn-sm btn-dark w-100 mb-2" data-patient-id="{{ patient.id }}" onclick="runAIDiagnostics(this.dataset.patientId)">
-                                            <i class="fa-solid fa-microchip me-1"></i> Trigger Clinical Prediction Analysis
-                                        </button>
-                                        
-                                        <div id="ai_results_{{ patient.id }}" class="d-none mt-2 p-2 bg-white border rounded">
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <span class="small fw-bold">Physiological Strain Risk:</span>
-                                                <span id="ai_risk_badge_{{ patient.id }}" class="badge">0.0</span>
-                                            </div>
-                                            <div class="small mb-1"><strong>Triage Designation:</strong> <span id="ai_triage_{{ patient.id }}" class="text-secondary">-</span></div>
-                                            <div class="small"><strong>Suggested ICD-10 Code:</strong> <span id="ai_icd_{{ patient.id }}" class="fst-italic text-success"></span></div>
-                                            <div class="small mt-1 text-muted border-top pt-1"><strong>Directives:</strong> <span id="ai_directives_{{ patient.id }}"></span></div>
-                                        </div>
-                                    </div>
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-bold">Subjective (S)</label>
-                                            <textarea name="subjective" class="form-control" rows="3" placeholder="Patient's complaints, history, symptoms..." required></textarea>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-bold">Objective (O)</label>
-                                            <textarea name="objective" class="form-control" rows="3" placeholder="Vitals, physical examination findings..." required></textarea>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-bold">Assessment (A)</label>
-                                            <textarea name="assessment" class="form-control" rows="3" placeholder="Differential medical diagnosis, clinical impressions..." required></textarea>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-bold">Plan (P)</label>
-                                            <textarea name="plan" class="form-control" rows="3" placeholder="Treatment strategies, prescriptions, ordered labs..." required></textarea>
-                                        </div>
-                                    </div>
+                        </td>
+                    </tr>
 
+                    <!-- Modal for Quick SOAP Note -->
+                    <div class="modal fade" id="soapModal{{ patient.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header bg-primary text-white">
+                                    <h5 class="modal-title"><i class="fa-solid fa-notes-medical me-2"></i>New SOAP Progress Note: {{ patient.full_name }}</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                 </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
-                                    <button type="submit" class="btn btn-success"><i class="fa-solid fa-floppy-disk me-1"></i> Commit to EMR</button>
-                                </div>
-                            </form>
+                                <form action="{{ url_for('clinical.add_soap_note', patient_id=patient.id) }}" method="POST">
+                                    <div class="modal-body">
+                                        <!-- Patient Overview Sub-header -->
+                                        <div class="alert alert-light border d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <strong>Age:</strong> {{ patient.age }} yrs | <strong>Sex:</strong> {{ patient.gender }} | <strong>Blood:</strong> {{ patient.blood_type }}
+                                            </div>
+                                            {% if patient.drug_sensitivities and patient.drug_sensitivities != 'None Known' %}
+                                                <div class="text-danger fw-bold small">
+                                                    <i class="fa-solid fa-triangle-exclamation me-1"></i>Drug Sensitivity: {{ patient.drug_sensitivities }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Real-Time AI Assistant -->
+                                        <div class="bg-light border rounded p-3 mb-4 shadow-sm">
+                                            <h6 class="text-primary fw-bold"><i class="fa-solid fa-robot me-2"></i>iHIS Real-Time AI Diagnostics Assistant</h6>
+                                            <p class="text-muted small mb-2">Input vitals and symptoms to compute real-time strain scores and suggested ICD-10 directives.</p>
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-6">
+                                                    <label class="small fw-semibold">Heart Rate (BPM)</label>
+                                                    <input type="number" id="ai_hr_{{ patient.id }}" class="form-control form-control-sm" value="82">
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="small fw-semibold">Temperature (°C)</label>
+                                                    <input type="number" step="0.1" id="ai_temp_{{ patient.id }}" class="form-control form-control-sm" value="37.2">
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-dark w-100 mb-2" onclick="runAIDiagnostics({{ patient.id }})">
+                                                <i class="fa-solid fa-microchip me-1"></i>Trigger Clinical Prediction Analysis
+                                            </button>
+                                            
+                                            <div id="ai_results_{{ patient.id }}" class="d-none mt-2 p-2 bg-white border rounded">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <span class="small fw-bold">Physiological Strain Risk:</span>
+                                                    <span id="ai_risk_badge_{{ patient.id }}" class="badge bg-secondary">0.0</span>
+                                                </div>
+                                                <div class="small mb-1"><strong>Triage Designation:</strong> <span id="ai_triage_{{ patient.id }}" class="text-secondary">-</span></div>
+                                                <div class="small"><strong>Suggested ICD-10 Code:</strong> <span id="ai_icd_{{ patient.id }}" class="fst-italic text-success"></span></div>
+                                                <div class="small mt-1 text-muted border-top pt-1"><strong>Directives:</strong> <span id="ai_directives_{{ patient.id }}"></span></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- SOAP Form Fields -->
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small">Subjective (S)</label>
+                                                <textarea name="subjective" id="soap_s_{{ patient.id }}" class="form-control" rows="3" placeholder="Patient complaints, symptoms..." required></textarea>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small">Objective (O)</label>
+                                                <textarea name="objective" id="soap_o_{{ patient.id }}" class="form-control" rows="3" placeholder="Physical examination, vitals findings..." required></textarea>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small">Assessment (A)</label>
+                                                <textarea name="assessment" id="soap_a_{{ patient.id }}" class="form-control" rows="3" placeholder="Clinical impression, diagnoses..." required></textarea>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small">Plan (P)</label>
+                                                <textarea name="plan" id="soap_p_{{ patient.id }}" class="form-control" rows="3" placeholder="Treatment, medication orders, labs..." required></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i>Save SOAP Note</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
+                    {% endfor %}
                 {% else %}
-                <tr>
-                    <td colspan="5" class="text-center py-4 text-muted">No patient records available. Run your seed script.</td>
-                </tr>
-                {% endfor %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-users fa-3x mb-3 text-secondary opacity-50"></i>
+                            <h5>No Patients Currently Registered</h5>
+                            <p class="small">Click the <strong>"Onboard New Patient"</strong> button above to register your first patient.</p>
+                        </td>
+                    </tr>
+                {% endif %}
             </tbody>
         </table>
     </div>
 </div>
-{% endblock %}
+
+<!-- MODAL: ONBOARD NEW PATIENT -->
+<div class="modal fade" id="addPatientModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-user-plus me-2"></i>Onboard New Patient</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('clinical.add_patient') }}" method="POST">
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">Enter the demographic, contact, and drug sensitivity information below to register a new patient in the hospital system.</p>
+                    
+                    <!-- Names Row -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">First Name <span class="text-danger">*</span></label>
+                            <input type="text" name="first_name" class="form-control" placeholder="e.g. John" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Second / Last Name <span class="text-danger">*</span></label>
+                            <input type="text" name="last_name" class="form-control" placeholder="e.g. Doe" required>
+                        </div>
+                    </div>
+
+                    <!-- Age, Sex, DOB Row -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Sex / Gender <span class="text-danger">*</span></label>
+                            <select name="gender" class="form-select" required>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Date of Birth</label>
+                            <input type="date" name="date_of_birth" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Or Approximate Age (Years)</label>
+                            <input type="number" name="age" class="form-control" placeholder="e.g. 45" min="0" max="130">
+                        </div>
+                    </div>
+
+                    <!-- Blood Group & Contact -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Blood Group</label>
+                            <select name="blood_type" class="form-select">
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="Unknown">Unknown</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold small">Contact Phone Number</label>
+                            <input type="tel" name="phone" class="form-control" placeholder="e.g. +1 (555) 019-2834">
+                        </div>
+                    </div>
+
+                    <!-- Drug Sensitivities Section (Highlighted Warning) -->
+                    <div class="card border-danger bg-light mb-3">
+                        <div class="card-body p-3">
+                            <label class="form-label fw-bold text-danger small mb-1">
+                                <i class="fa-solid fa-triangle-exclamation me-1"></i>Drug Sensitivities & Medication Allergies
+                            </label>
+                            <p class="text-muted small mb-2">Specify any medications, antibiotics, or pharmaceutical agents the patient is sensitive or allergic to.</p>
+                            <input type="text" name="drug_sensitivities" class="form-control border-danger" placeholder="e.g. Penicillin (Anaphylaxis), Sulfa drugs (Skin rash), Aspirin (Bronchospasm)">
+                        </div>
+                    </div>
+
+                    <!-- Other Allergies & Chronic Conditions -->
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Other Allergies (Food / Environmental)</label>
+                            <input type="text" name="allergies" class="form-control" placeholder="e.g. Latex, Peanuts, Iodine contrast">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Chronic Diseases & Medical History</label>
+                            <input type="text" name="chronic_diseases" class="form-control" placeholder="e.g. Type 2 Diabetes, Hypertension, Asthma">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check me-1"></i>Register Patient</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <script>
 function runAIDiagnostics(patientId) {
-    const modalNode = document.querySelector(`#soapModal${patientId}`);
-    const sub = modalNode.querySelector('textarea[name="subjective"]').value;
-    const obj = modalNode.querySelector('textarea[name="objective"]').value;
     const hr = document.getElementById(`ai_hr_${patientId}`).value;
     const temp = document.getElementById(`ai_temp_${patientId}`).value;
+    const subj = document.getElementById(`soap_s_${patientId}`) ? document.getElementById(`soap_s_${patientId}`).value : '';
+    const obj = document.getElementById(`soap_o_${patientId}`) ? document.getElementById(`soap_o_${patientId}`).value : '';
 
     fetch('/clinical/ai-analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subjective: sub, objective: obj, heart_rate: hr, temperature: temp })
+        body: JSON.stringify({ heart_rate: hr, temperature: temp, subjective: subj, objective: obj })
     })
-    .then(res => res.json())
+    .then(r => r.json())
     .then(data => {
-        document.getElementById(`ai_results_${patientId}`).classList.remove('d-none');
-        document.getElementById(`ai_triage_${patientId}`).innerText = data.triage_level;
+        const resDiv = document.getElementById(`ai_results_${patientId}`);
+        resDiv.classList.remove('d-none');
         
         const badge = document.getElementById(`ai_risk_badge_${patientId}`);
         badge.innerText = data.risk_score;
-        badge.className = data.risk_score > 1.2 ? 'badge bg-danger' : 'badge bg-warning text-dark';
+        badge.className = `badge ${data.risk_score > 1.2 ? 'bg-danger' : (data.risk_score > 0.8 ? 'bg-warning text-dark' : 'bg-success')}`;
 
-        if(data.suggested_diagnoses.length > 0) {
-            document.getElementById(`ai_icd_${patientId}`).innerText = 
-                `${data.suggested_diagnoses[0].code} - ${data.suggested_diagnoses[0].description}`;
-        }
+        document.getElementById(`ai_triage_${patientId}`).innerText = data.triage_level;
         
-        document.getElementById(`ai_directives_${patientId}`).innerText = 
-            data.clinical_plan_directives.join(' ');
+        const icds = (data.suggested_diagnoses || []).map(d => `${d.code} - ${d.description}`).join('; ');
+        document.getElementById(`ai_icd_${patientId}`).innerText = icds || 'N/A';
+
+        const directives = (data.clinical_plan_directives || []).join('; ');
+        document.getElementById(`ai_directives_${patientId}`).innerText = directives || 'Standard tracking';
     })
-    .catch(err => console.error("iHIS AI System Network Interruption Error:", err));
+    .catch(err => {
+        alert("AI Service call failed: " + err);
+    });
 }
 </script>
+{% endblock %}

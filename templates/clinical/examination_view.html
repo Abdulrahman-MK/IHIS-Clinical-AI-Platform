@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+    <div>
+        <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-file-medical text-primary me-2"></i>Medical Examination Report #ENC-{{ record.id }}</h3>
+        <p class="text-muted mb-0">Official Electronic Clinical Encounter Record</p>
+    </div>
+    <div>
+        <button onclick="window.print()" class="btn btn-outline-dark me-2">
+            <i class="fa-solid fa-print me-1"></i>Print Report
+        </button>
+        <a href="{{ url_for('clinical.patient_records', patient_id=patient.id) }}" class="btn btn-primary">
+            <i class="fa-solid fa-folder-open me-1"></i>Back to Patient EMR
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm p-4 bg-white" style="max-width: 900px; margin: 0 auto;">
+    <!-- Hospital Header -->
+    <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-4">
+        <div>
+            <h4 class="fw-bold text-primary mb-1"><i class="fa-solid fa-heart-pulse me-2"></i>iHIS Medical Center</h4>
+            <span class="text-muted small">Department of Clinical Medicine & Patient Care</span>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-secondary p-2">Encounter ID: #{{ record.id }}</span>
+            <div class="small text-muted mt-1">Date: {{ record.created_at.strftime('%B %d, %Y %H:%M') if record.created_at else 'N/A' }}</div>
+        </div>
+    </div>
+
+    <!-- Patient & Physician Identification -->
+    <div class="row g-3 mb-4 p-3 bg-light rounded border">
+        <div class="col-md-6">
+            <h6 class="text-muted text-uppercase small fw-bold mb-2">Patient Details</h6>
+            <div class="fw-bold text-dark fs-5">{{ patient.last_name }}, {{ patient.first_name }}</div>
+            <div class="small text-secondary">
+                <span><strong>ID:</strong> #{{ patient.id }}</span> | 
+                <span><strong>Age:</strong> {{ patient.age }} yrs</span> | 
+                <span><strong>Sex:</strong> {{ patient.gender }}</span> | 
+                <span><strong>Blood:</strong> {{ patient.blood_type }}</span>
+            </div>
+            <div class="small text-secondary"><strong>DOB:</strong> {{ patient.date_of_birth }} | <strong>Phone:</strong> {{ patient.phone or 'N/A' }}</div>
+        </div>
+        <div class="col-md-6">
+            <h6 class="text-muted text-uppercase small fw-bold mb-2">Attending Clinician</h6>
+            <div class="fw-bold text-dark fs-5">Dr. {{ record.doctor.username if record.doctor else 'Clinician' }}</div>
+            <div class="small text-secondary">Attending Medical Specialist</div>
+            
+            <!-- Drug Sensitivities Warning Banner -->
+            <div class="mt-2 p-2 rounded bg-danger bg-opacity-10 border border-danger">
+                <span class="small fw-bold text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Drug Sensitivities:</span>
+                <span class="small fw-semibold text-danger">{{ record.drug_sensitivities_snapshot or patient.drug_sensitivities or 'None Reported' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vitals Encounter Snapshot -->
+    <div class="mb-4">
+        <h6 class="fw-bold text-primary border-bottom pb-2 mb-3"><i class="fa-solid fa-heart-pulse me-2"></i>Vital Signs at Encounter</h6>
+        <div class="row g-2 text-center small">
+            <div class="col">
+                <div class="p-2 border rounded bg-light">
+                    <span class="text-muted d-block small">Blood Pressure</span>
+                    <strong class="text-dark">{{ record.blood_pressure_sys or '-' }}/{{ record.blood_pressure_dia or '-' }} mmHg</strong>
+                </div>
+            </div>
+            <div class="col">
+                <div class="p-2 border rounded bg-light">
+                    <span class="text-muted d-block small">Heart Rate</span>
+                    <strong class="text-dark">{{ record.heart_rate or '-' }} bpm</strong>
+                </div>
+            </div>
+            <div class="col">
+                <div class="p-2 border rounded bg-light">
+                    <span class="text-muted d-block small">Temperature</span>
+                    <strong class="text-dark">{{ record.temperature or '-' }} °C</strong>
+                </div>
+            </div>
+            <div class="col">
+                <div class="p-2 border rounded bg-light">
+                    <span class="text-muted d-block small">Respiratory Rate</span>
+                    <strong class="text-dark">{{ record.respiratory_rate or '-' }} /min</strong>
+                </div>
+            </div>
+            <div class="col">
+                <div class="p-2 border rounded bg-light">
+                    <span class="text-muted d-block small">SpO2 Oxygen</span>
+                    <strong class="text-dark">{{ record.spo2 or '-' }} %</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History & Chief Complaint -->
+    <div class="mb-4">
+        <h6 class="fw-bold text-primary border-bottom pb-2 mb-2"><i class="fa-solid fa-comment-medical me-2"></i>Chief Complaint & History of Present Illness</h6>
+        <div class="p-3 bg-light rounded border mb-2">
+            <strong>Chief Complaint:</strong> {{ record.chief_complaint or record.subjective or 'Routine Clinical Encounter' }}
+        </div>
+        {% if record.hpi %}
+        <div class="p-3 bg-light rounded border">
+            <strong>History of Present Illness (HPI):</strong>
+            <p class="mb-0 text-secondary mt-1">{{ record.hpi }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Physical Examination Findings -->
+    <div class="mb-4">
+        <h6 class="fw-bold text-primary border-bottom pb-2 mb-2"><i class="fa-solid fa-user-check me-2"></i>Physical Examination Findings</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered small mb-0">
+                <thead class="table-light">
+                    <tr><th style="width: 25%;">System</th><th>Clinical Findings</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>General</strong></td><td>{{ record.exam_general or 'Alert, oriented, no acute distress.' }}</td></tr>
+                    <tr><td><strong>HEENT</strong></td><td>{{ record.exam_heent or 'Normocephalic, atraumatic, moist mucosa.' }}</td></tr>
+                    <tr><td><strong>Cardiovascular</strong></td><td>{{ record.exam_cardiovascular or 'Regular rate and rhythm, normal S1/S2.' }}</td></tr>
+                    <tr><td><strong>Respiratory</strong></td><td>{{ record.exam_respiratory or 'Clear to auscultation bilaterally.' }}</td></tr>
+                    <tr><td><strong>Abdomen</strong></td><td>{{ record.exam_abdomen or 'Soft, non-tender, non-distended.' }}</td></tr>
+                    <tr><td><strong>Musculoskeletal</strong></td><td>{{ record.exam_musculoskeletal or 'Full range of motion, no deformities.' }}</td></tr>
+                    <tr><td><strong>Neurological</strong></td><td>{{ record.exam_neurological or 'Grossly intact, cranial nerves normal.' }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Assessment & Diagnoses -->
+    <div class="mb-4">
+        <h6 class="fw-bold text-primary border-bottom pb-2 mb-2"><i class="fa-solid fa-stethoscope me-2"></i>Clinical Assessment & Diagnosis</h6>
+        <div class="p-3 bg-light rounded border mb-2">
+            <div class="fw-bold text-dark fs-6">{{ record.assessment or 'General Medical Assessment Completed' }}</div>
+            {% if record.icd10_codes %}
+                <div class="mt-2"><span class="badge bg-primary">ICD-10 Code: {{ record.icd10_codes }}</span></div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Plan & Directives -->
+    <div class="mb-4">
+        <h6 class="fw-bold text-primary border-bottom pb-2 mb-2"><i class="fa-solid fa-clipboard-list me-2"></i>Treatment Plan & Directives</h6>
+        <div class="p-3 bg-light rounded border">
+            <pre class="mb-0 font-monospace text-dark" style="white-space: pre-wrap; font-family: inherit;">{{ record.plan or 'Standard preventive tracking.' }}</pre>
+        </div>
+    </div>
+
+    <!-- Footer Signature -->
+    <div class="row pt-4 mt-4 border-top">
+        <div class="col-6">
+            <span class="small text-muted">Electronically verified in iHIS EHR Core</span>
+        </div>
+        <div class="col-6 text-end">
+            <div class="fw-bold text-dark">Dr. {{ record.doctor.username if record.doctor else 'Clinician' }}</div>
+            <div class="small text-muted">Authorized Medical Provider</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

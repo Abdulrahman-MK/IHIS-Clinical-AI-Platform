@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-stethoscope text-primary me-2"></i>Clinical Examination Sheet</h3>
+        <p class="text-muted mb-0">Comprehensive patient clinical encounter, physical assessment, vitals, and decision support.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('clinical.patient_records', patient_id=patient.id) }}" class="btn btn-outline-secondary me-2">
+            <i class="fa-solid fa-folder-open me-1"></i>Patient EMR
+        </a>
+        <a href="{{ url_for('portals.doctor_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- PATIENT CLINICAL BANNER (Demographics & Drug Sensitivities) -->
+<div class="card border-0 shadow-sm mb-4 bg-white">
+    <div class="card-body p-3">
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; font-size: 1.25rem; font-weight: bold;">
+                        {{ patient.first_name[0] }}{{ patient.last_name[0] }}
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0 text-dark">{{ patient.last_name }}, {{ patient.first_name }}</h4>
+                        <span class="text-muted small">Patient ID: #{{ patient.id }} | DOB: {{ patient.date_of_birth }}</span>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2 text-dark small">
+                    <span class="badge bg-light text-dark border"><i class="fa-solid fa-cake-candles me-1 text-primary"></i><strong>Age:</strong> {{ patient.age }} yrs</span>
+                    <span class="badge bg-light text-dark border"><i class="fa-solid fa-venus-mars me-1 text-primary"></i><strong>Sex:</strong> {{ patient.gender }}</span>
+                    <span class="badge bg-info text-dark"><i class="fa-solid fa-droplet me-1"></i><strong>Blood Group:</strong> {{ patient.blood_type }}</span>
+                    <span class="badge bg-light text-dark border"><i class="fa-solid fa-phone me-1"></i>{{ patient.phone or 'No phone' }}</span>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <!-- Drug Sensitivities Alert Card -->
+                <div class="border border-danger rounded p-2 bg-danger bg-opacity-10">
+                    <div class="d-flex align-items-center mb-1">
+                        <i class="fa-solid fa-triangle-exclamation text-danger me-2 fa-lg"></i>
+                        <h6 class="mb-0 text-danger fw-bold small text-uppercase">Known Drug Sensitivities & Allergies</h6>
+                    </div>
+                    <div class="fw-semibold text-danger small">
+                        {% if patient.drug_sensitivities and patient.drug_sensitivities != 'None Known' %}
+                            {{ patient.drug_sensitivities }}
+                        {% else %}
+                            <span class="text-secondary">No known drug allergies reported (NKDA).</span>
+                        {% endif %}
+                    </div>
+                    {% if patient.allergies and patient.allergies != 'None Reported' %}
+                        <div class="text-muted small mt-1"><strong>Other Allergies:</strong> {{ patient.allergies }}</div>
+                    {% endif %}
+                    {% if patient.chronic_diseases and patient.chronic_diseases != 'None Reported' %}
+                        <div class="text-muted small"><strong>Chronic Conditions:</strong> {{ patient.chronic_diseases }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN EXAMINATION FORM -->
+<form action="{{ url_for('clinical.examination_sheet', patient_id=patient.id) }}" method="POST" id="examSheetForm">
+    <!-- Preserved hidden snapshot of drug sensitivities -->
+    <input type="hidden" name="drug_sensitivities" value="{{ patient.drug_sensitivities }}">
+
+    <div class="row g-4">
+        <!-- LEFT COLUMN: Encounter & Physical Exam -->
+        <div class="col-lg-8">
+            
+            <!-- SECTION 1: Chief Complaint & HPI -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 text-dark fw-bold">
+                        <i class="fa-solid fa-clipboard-question text-primary me-2"></i>1. Chief Complaint & History of Present Illness (HPI)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Chief Complaint (Primary Reason for Encounter) <span class="text-danger">*</span></label>
+                        <input type="text" name="chief_complaint" id="chief_complaint" class="form-control" placeholder="e.g. Acute left wrist pain and swelling following fall, fever and cough for 3 days" required>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label fw-semibold small">History of Present Illness (HPI & Clinical Narrative)</label>
+                        <textarea name="hpi" id="hpi" class="form-control" rows="3" placeholder="Onset, location, duration, character, aggravating/relieving factors, radiation, temporal patterns..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: Systematic Physical Examination -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-dark fw-bold">
+                        <i class="fa-solid fa-user-check text-primary me-2"></i>2. Systematic Physical Examination
+                    </h5>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="fillNormalExam()">
+                        <i class="fa-solid fa-check-double me-1"></i>Preset Normal Findings
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">General Appearance</label>
+                            <input type="text" name="exam_general" id="exam_general" class="form-control form-control-sm" placeholder="Alert, oriented x3, well-nourished, no acute distress">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">HEENT (Head, Eyes, Ears, Nose, Throat)</label>
+                            <input type="text" name="exam_heent" id="exam_heent" class="form-control form-control-sm" placeholder="Normocephalic, PERRLA, mucus membranes moist">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Cardiovascular / Heart</label>
+                            <input type="text" name="exam_cardiovascular" id="exam_cardiovascular" class="form-control form-control-sm" placeholder="Regular rate and rhythm, normal S1/S2, no murmurs, gallops, or rubs">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Respiratory / Lungs</label>
+                            <input type="text" name="exam_respiratory" id="exam_respiratory" class="form-control form-control-sm" placeholder="Clear to auscultation bilaterally, no wheezing, rales, or rhonchi">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Abdomen</label>
+                            <input type="text" name="exam_abdomen" id="exam_abdomen" class="form-control form-control-sm" placeholder="Soft, non-tender, non-distended, normoactive bowel sounds">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Musculoskeletal & Extremities</label>
+                            <input type="text" name="exam_musculoskeletal" id="exam_musculoskeletal" class="form-control form-control-sm" placeholder="Full range of motion, no joint swelling, no deformities">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Neurological & Reflexes</label>
+                            <input type="text" name="exam_neurological" id="exam_neurological" class="form-control form-control-sm" placeholder="Cranial nerves II-XII intact, motor strength 5/5, normal sensation">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: Assessment & Plan -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 text-dark fw-bold">
+                        <i class="fa-solid fa-file-signature text-primary me-2"></i>3. Clinical Assessment & Management Plan
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Clinical Assessment / Differential Diagnosis <span class="text-danger">*</span></label>
+                        <textarea name="assessment" id="assessment" class="form-control" rows="2" placeholder="Primary medical diagnosis, clinical impressions..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Suggested ICD-10 Code(s)</label>
+                        <input type="text" name="icd10_codes" id="icd10_codes" class="form-control form-control-sm" placeholder="e.g. S52.501A (Fracture of lower end of right radius), J22 (Acute lower respiratory infection)">
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label fw-semibold small">Treatment Plan, Interventions & Directives <span class="text-danger">*</span></label>
+                        <textarea name="plan" id="plan" class="form-control" rows="3" placeholder="Medications, ordered labs/imaging, referrals, follow-up schedule..." required></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Vitals Station & Real-Time AI Assistant -->
+        <div class="col-lg-4">
+            
+            <!-- Vitals Triage Station -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 text-dark fw-bold">
+                        <i class="fa-solid fa-heart-pulse text-danger me-2"></i>Vitals Triage Station
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">BP Systolic (mmHg)</label>
+                            <input type="number" name="blood_pressure_sys" id="bp_sys" class="form-control form-control-sm" value="120" placeholder="120">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">BP Diastolic (mmHg)</label>
+                            <input type="number" name="blood_pressure_dia" id="bp_dia" class="form-control form-control-sm" value="80" placeholder="80">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Heart Rate (BPM)</label>
+                            <input type="number" name="heart_rate" id="heart_rate" class="form-control form-control-sm" value="78" placeholder="78">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Temperature (°C)</label>
+                            <input type="number" step="0.1" name="temperature" id="temperature" class="form-control form-control-sm" value="37.0" placeholder="37.0">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Resp Rate (bpm)</label>
+                            <input type="number" name="respiratory_rate" id="respiratory_rate" class="form-control form-control-sm" value="16" placeholder="16">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">SpO2 (%)</label>
+                            <input type="number" name="spo2" id="spo2" class="form-control form-control-sm" value="98" placeholder="98">
+                        </div>
+                    </div>
+
+                    <!-- AI Trigger Button -->
+                    <button type="button" class="btn btn-dark w-100 py-2 fw-semibold shadow-sm" onclick="runExamAIDiagnostics()">
+                        <i class="fa-solid fa-microchip me-2 text-warning"></i>Run Real-Time AI Diagnostics
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI Real-Time Insights Panel -->
+            <div class="card border-0 shadow-sm mb-4 bg-light">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="mb-0 text-dark fw-bold"><i class="fa-solid fa-robot text-primary me-2"></i>AI Clinical Decision Support</h6>
+                </div>
+                <div class="card-body">
+                    <div id="ai_exam_results" class="p-2 bg-white border rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small fw-bold">Physiological Strain Risk:</span>
+                            <span id="ai_exam_risk_badge" class="badge bg-success">0.0</span>
+                        </div>
+                        <div class="small mb-2"><strong>Triage Level:</strong> <span id="ai_exam_triage" class="badge bg-secondary">Routine</span></div>
+                        <div class="small mb-2"><strong>Suggested ICD-10:</strong> <span id="ai_exam_icd" class="text-primary fst-italic">Click Run AI Diagnostics above</span></div>
+                        <div class="small text-muted border-top pt-2"><strong>Directives:</strong> <div id="ai_exam_directives" class="small mt-1 text-dark">Awaiting exam input...</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Examination Action -->
+            <div class="card border-0 shadow-sm p-3 bg-white">
+                <button type="submit" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow-sm">
+                    <i class="fa-solid fa-floppy-disk me-2"></i>Save & Complete Examination Sheet
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+function fillNormalExam() {
+    document.getElementById('exam_general').value = 'Alert, oriented x3, in no acute distress.';
+    document.getElementById('exam_heent').value = 'Normocephalic, atraumatic. PERRLA. Oropharynx clear.';
+    document.getElementById('exam_cardiovascular').value = 'Regular rate and rhythm, normal S1/S2, no murmurs.';
+    document.getElementById('exam_respiratory').value = 'Clear to auscultation bilaterally, no adventitious breath sounds.';
+    document.getElementById('exam_abdomen').value = 'Soft, non-tender, non-distended, normal active bowel sounds.';
+    document.getElementById('exam_musculoskeletal').value = 'Full range of motion in all four extremities, no joint effusion.';
+    document.getElementById('exam_neurological').value = 'Grossly intact, cranial nerves normal, strength 5/5 bilaterally.';
+}
+
+function runExamAIDiagnostics() {
+    const hr = document.getElementById('heart_rate').value;
+    const temp = document.getElementById('temperature').value;
+    const cc = document.getElementById('chief_complaint').value;
+    const hpi = document.getElementById('hpi').value;
+    const pe = document.getElementById('exam_musculoskeletal').value + ' ' + document.getElementById('exam_respiratory').value;
+
+    fetch('/clinical/ai-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ heart_rate: hr, temperature: temp, subjective: cc + ' ' + hpi, objective: pe })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const badge = document.getElementById('ai_exam_risk_badge');
+        badge.innerText = data.risk_score;
+        badge.className = `badge ${data.risk_score > 1.2 ? 'bg-danger' : (data.risk_score > 0.8 ? 'bg-warning text-dark' : 'bg-success')}`;
+
+        document.getElementById('ai_exam_triage').innerText = data.triage_level;
+        document.getElementById('ai_exam_triage').className = `badge ${data.triage_level.includes('Emergent') ? 'bg-danger' : 'bg-primary'}`;
+
+        const icdList = (data.suggested_diagnoses || []).map(d => `${d.code} (${d.description})`).join(', ');
+        document.getElementById('ai_exam_icd').innerText = icdList || 'Z00.00 General Examination';
+        
+        // Auto-fill ICD input if empty
+        const icdInput = document.getElementById('icd10_codes');
+        if (!icdInput.value && data.suggested_diagnoses && data.suggested_diagnoses.length > 0) {
+            icdInput.value = data.suggested_diagnoses[0].code + ' - ' + data.suggested_diagnoses[0].description;
+        }
+
+        const dirList = (data.clinical_plan_directives || []).map(d => `• ${d}`).join('<br>');
+        document.getElementById('ai_exam_directives').innerHTML = dirList || 'Maintain baseline preventive tracking.';
+
+        // Auto-append directives to plan if plan is empty
+        const planInput = document.getElementById('plan');
+        if (!planInput.value && data.clinical_plan_directives && data.clinical_plan_directives.length > 0) {
+            planInput.value = data.clinical_plan_directives.join('\n');
+        }
+    })
+    .catch(err => {
+        alert("AI Service call failed: " + err);
+    });
+}
+</script>
+{% endblock %}

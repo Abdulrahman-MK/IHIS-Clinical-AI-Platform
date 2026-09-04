@@ -3,64 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iHIS Ecosystem Portal</title>
+    <title>iHIS Healthcare Ecosystem Portal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { overflow-x: hidden; background-color: #f8f9fa; }
-        .sidebar { min-height: 100vh; background: #212529; color: white; transition: all 0.3s; }
-        .sidebar .nav-link { color: rgba(255,255,255,0.75); margin-bottom: 10px; border-radius: 4px; }
+        body { overflow-x: hidden; background-color: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        .sidebar { min-height: 100vh; background: #1a1e24; color: white; transition: all 0.3s; }
+        .sidebar .nav-link { color: rgba(255,255,255,0.75); margin-bottom: 8px; border-radius: 6px; padding: 10px 14px; font-weight: 500; font-size: 0.95rem; }
         .sidebar .nav-link:hover, .sidebar .nav-link.active { color: white; background: #0d6efd; }
+        .sidebar .nav-link i { width: 22px; }
         .main-content { min-height: 100vh; background-color: #f4f6f9; }
+        .card { border-radius: 8px; }
+        .badge-drug-sensitivity { background-color: #dc3545; color: white; font-weight: 600; }
     </style>
 </head>
 <body>
     <div class="container-fluid">
         <div class="row">
+            <!-- Sidebar Navigation -->
             <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse p-3 shadow">
                 <div class="d-flex align-items-center mb-4 text-white text-decoration-none">
                     <i class="fa-solid fa-heart-pulse fa-2x me-2 text-primary"></i>
-                    <span class="fs-4 fw-bold">iHIS v2026</span>
+                    <div>
+                        <span class="fs-4 fw-bold d-block lh-1">iHIS Portal</span>
+                        <small class="text-muted" style="font-size: 0.75rem;">Healthcare System 2026</small>
+                    </div>
                 </div>
-                <hr>
+                <hr class="border-secondary">
                 <ul class="nav nav-pills flex-column mb-auto">
                     <li class="nav-item">
                         <a href="/portal/doctor" class="nav-link {% if request.path == '/portal/doctor' %}active{% endif %}">
-                            <i class="fa-solid fa-chart-pie me-2"></i> Dashboard
+                            <i class="fa-solid fa-chart-pie me-2"></i> Clinical Dashboard
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="nav-link"><i class="fa-solid fa-folder-open me-2"></i> Records Matrix</a>
-                    </li>
-                    <li>
-                        <a href="#" class="nav-link"><i class="fa-solid fa-flask me-2"></i> Labs & Orders</a>
-                    </li>
-                    <!-- Pharmacy Review added here -->
-                    <li>
-                        <a href="/pharmacy/review" class="nav-link {% if '/pharmacy' in request.path %}active{% endif %}">
-                            <i class="fa-solid fa-capsules me-2"></i> Clinical Safety Review
+                        <a href="{{ url_for('clinical.records_matrix') }}" class="nav-link {% if '/clinical/records' in request.path or '/clinical/patient' in request.path or '/clinical/examination' in request.path %}active{% endif %}">
+                            <i class="fa-solid fa-folder-open me-2"></i> Records Matrix
                         </a>
                     </li>
-                    <!-- Radiology Department AI -->
+                    <li>
+                        <a href="{{ url_for('orders.orders_hub') }}" class="nav-link {% if '/orders' in request.path %}active{% endif %}">
+                            <i class="fa-solid fa-flask me-2"></i> Labs & Orders
+                        </a>
+                    </li>
                     <li>
                         <a href="{{ url_for('radiology.dashboard') }}" class="nav-link {% if '/radiology' in request.path %}active{% endif %}">
-                            <i class="fa-solid fa-x-ray me-2"></i> Radiology & Imaging AI
+                            <i class="fa-solid fa-x-ray me-2"></i> Radiology & AI X-Ray
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/pharmacy/review" class="nav-link {% if '/pharmacy' in request.path %}active{% endif %}">
+                            <i class="fa-solid fa-capsules me-2"></i> Pharmacy Safety
                         </a>
                     </li>
                 </ul>
-                <hr>
+                <hr class="border-secondary">
                 <div class="dropdown">
-                    <a href="{{ url_for('auth.logout') }}" class="btn btn-danger w-100">
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger w-100 btn-sm py-2">
                         <i class="fa-solid fa-right-from-bracket me-2"></i> Secure Logout
                     </a>
                 </div>
             </nav>
 
+            <!-- Main Content Area -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2 text-dark fw-semibold">Clinical Management System</h1>
-                    <div class="badge bg-secondary p-2 shadow-sm">
-                        <i class="fa-solid fa-user-shield me-1"></i> Mode: {{ current_user.role.name }}
+                    <div>
+                        <h2 class="h3 text-dark fw-bold mb-0">Hospital Information & Clinical Management</h2>
+                        <small class="text-muted">Integrated Clinical Decision Support & EHR</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="badge bg-primary p-2 shadow-sm me-2">
+                            <i class="fa-solid fa-user-doctor me-1"></i> User: {{ current_user.username }}
+                        </div>
+                        <div class="badge bg-dark p-2 shadow-sm">
+                            <i class="fa-solid fa-shield-halved me-1"></i> Role: {{ current_user.role.name }}
+                        </div>
                     </div>
                 </div>
 

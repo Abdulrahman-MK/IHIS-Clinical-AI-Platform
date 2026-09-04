@@ -1,0 +1,353 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-flask text-primary me-2"></i>Labs & Orders Central Hub</h3>
+        <p class="text-muted mb-0">Unified management for Laboratory investigations, Radiology AI imaging, and Pharmacy prescriptions.</p>
+    </div>
+    <button class="btn btn-primary shadow-sm py-2 px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#newOrderModal">
+        <i class="fa-solid fa-plus-circle me-2"></i>Issue New Clinical Order
+    </button>
+</div>
+
+<!-- TOP STATISTICAL CARDS -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 border-start border-primary border-4 shadow-sm p-3 bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase small mb-1">Laboratory Orders</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ total_labs }}</h3>
+                    <small class="text-warning fw-semibold"><i class="fa-solid fa-hourglass-half me-1"></i>{{ pending_labs }} Pending</small>
+                </div>
+                <i class="fa-solid fa-flask-vial fa-2x text-primary opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 border-start border-info border-4 shadow-sm p-3 bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase small mb-1">Radiology Studies</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ total_rads }}</h3>
+                    <small class="text-info fw-semibold"><i class="fa-solid fa-x-ray me-1"></i>{{ pending_rads }} Awaiting Scan</small>
+                </div>
+                <i class="fa-solid fa-x-ray fa-2x text-info opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 border-start border-success border-4 shadow-sm p-3 bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase small mb-1">Prescriptions Issued</h6>
+                    <h3 class="fw-bold mb-0 text-dark">{{ total_rxs }}</h3>
+                    <small class="text-success fw-semibold"><i class="fa-solid fa-check-double me-1"></i>{{ active_rxs }} Active</small>
+                </div>
+                <i class="fa-solid fa-capsules fa-2x text-success opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ORDERS TABS -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 py-3">
+        <ul class="nav nav-tabs card-header-tabs" id="ordersTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active fw-semibold" id="labs-tab" data-bs-toggle="tab" data-bs-target="#labsPanel" type="button">
+                    <i class="fa-solid fa-flask me-1 text-primary"></i>Laboratory Orders ({{ lab_orders|length }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" id="rad-tab" data-bs-toggle="tab" data-bs-target="#radPanel" type="button">
+                    <i class="fa-solid fa-x-ray me-1 text-info"></i>Radiology & AI Scans ({{ radiology_orders|length }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" id="rx-tab" data-bs-toggle="tab" data-bs-target="#rxPanel" type="button">
+                    <i class="fa-solid fa-capsules me-1 text-success"></i>Pharmacy Prescriptions ({{ prescriptions|length }})
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card-body p-3 tab-content" id="ordersTabsContent">
+        
+        <!-- PANEL 1: LABORATORY ORDERS -->
+        <div class="tab-pane fade show active" id="labsPanel">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light text-secondary">
+                        <tr>
+                            <th>Order #</th>
+                            <th>Patient Name</th>
+                            <th>Diagnostic Test Panel</th>
+                            <th>Date Ordered</th>
+                            <th>Status</th>
+                            <th>Laboratory Results</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if lab_orders %}
+                            {% for lab in lab_orders %}
+                            <tr>
+                                <td class="fw-bold text-primary">#LAB-{{ lab.id }}</td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ lab.patient.full_name if lab.patient else 'Patient #' ~ lab.patient_id }}</div>
+                                    <small class="text-muted">ID: #{{ lab.patient_id }}</small>
+                                </td>
+                                <td class="fw-semibold text-dark">{{ lab.test_name }}</td>
+                                <td class="small text-muted">{{ lab.created_at.strftime('%Y-%m-%d %H:%M') if lab.created_at else 'N/A' }}</td>
+                                <td>
+                                    {% if lab.status == 'Completed' %}
+                                        <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Completed</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i>Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small" style="max-width: 250px;">
+                                    {% if lab.results %}
+                                        <span class="text-truncate d-inline-block" style="max-width: 240px;" title="{{ lab.results }}">{{ lab.results }}</span>
+                                    {% else %}
+                                        <span class="text-muted fst-italic">Pending laboratory technician analysis</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#updateLabModal{{ lab.id }}">
+                                        <i class="fa-solid fa-pen-to-square me-1"></i>Update Results
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <!-- Modal to Update Lab Results -->
+                            <div class="modal fade" id="updateLabModal{{ lab.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title"><i class="fa-solid fa-flask me-2"></i>Publish Lab Results: #LAB-{{ lab.id }}</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form action="{{ url_for('orders.update_lab', order_id=lab.id) }}" method="POST">
+                                            <div class="modal-body">
+                                                <div class="mb-2"><strong>Test:</strong> {{ lab.test_name }}</div>
+                                                <div class="mb-3"><strong>Patient:</strong> {{ lab.patient.full_name if lab.patient else 'Patient #' ~ lab.patient_id }}</div>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold small">Diagnostic Findings & Values</label>
+                                                    <textarea name="results" class="form-control" rows="4" placeholder="Enter serum metrics, reference range comparisons, abnormal flags..." required>{{ lab.results or '' }}</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-success"><i class="fa-solid fa-check me-1"></i>Publish & Complete Order</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="7" class="text-center py-4 text-muted">No laboratory orders recorded.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PANEL 2: RADIOLOGY ORDERS -->
+        <div class="tab-pane fade" id="radPanel">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light text-secondary">
+                        <tr>
+                            <th>Order #</th>
+                            <th>Patient Name</th>
+                            <th>Imaging Study</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>AI Fracture & Bone Findings</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if radiology_orders %}
+                            {% for rad in radiology_orders %}
+                            <tr>
+                                <td class="fw-bold text-info">#RAD-{{ rad.id }}</td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ rad.patient.full_name if rad.patient else 'Patient #' ~ rad.patient_id }}</div>
+                                </td>
+                                <td class="fw-semibold text-dark">{{ rad.imaging_type }}</td>
+                                <td class="small text-muted">{{ rad.created_at.strftime('%Y-%m-%d') if rad.created_at else 'N/A' }}</td>
+                                <td>
+                                    {% if rad.status == 'Completed' %}
+                                        <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Reported</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i>Pending Scan</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small" style="max-width: 260px;">
+                                    {% if rad.findings %}
+                                        <span class="text-truncate d-inline-block" style="max-width: 250px;" title="{{ rad.findings }}">{{ rad.findings }}</span>
+                                    {% else %}
+                                        <span class="text-muted fst-italic">Awaiting imaging execution</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('radiology.order_detail', order_id=rad.id) }}" class="btn btn-sm btn-outline-info">
+                                        <i class="fa-solid fa-microchip me-1"></i>Run / View AI
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="7" class="text-center py-4 text-muted">No radiology orders recorded.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PANEL 3: PRESCRIPTIONS -->
+        <div class="tab-pane fade" id="rxPanel">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light text-secondary">
+                        <tr>
+                            <th>Rx #</th>
+                            <th>Patient Name</th>
+                            <th>Medication Name</th>
+                            <th>Dosage</th>
+                            <th>Frequency</th>
+                            <th>Status</th>
+                            <th>Prescribed On</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if prescriptions %}
+                            {% for rx in prescriptions %}
+                            <tr>
+                                <td class="fw-bold text-success">#RX-{{ rx.id }}</td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ rx.patient.full_name if rx.patient else 'Patient #' ~ rx.patient_id }}</div>
+                                    {% if rx.patient and rx.patient.drug_sensitivities and rx.patient.drug_sensitivities != 'None Known' %}
+                                        <span class="badge bg-danger small">Sensitivities: {{ rx.patient.drug_sensitivities }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold text-dark">{{ rx.medication_name }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ rx.dosage }}</span></td>
+                                <td class="small">{{ rx.frequency }}</td>
+                                <td><span class="badge {% if rx.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">{{ rx.status }}</span></td>
+                                <td class="small text-muted">{{ rx.created_at.strftime('%Y-%m-%d') if rx.created_at else 'N/A' }}</td>
+                                <td class="text-end">
+                                    <a href="/pharmacy/review" class="btn btn-sm btn-outline-success">
+                                        <i class="fa-solid fa-shield-halved me-1"></i>Safety Review
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="8" class="text-center py-4 text-muted">No prescriptions recorded.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: CREATE NEW CLINICAL ORDER -->
+<div class="modal fade" id="newOrderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-plus-circle me-2"></i>Issue New Clinical Order</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('orders.quick_create') }}" method="POST">
+                <div class="modal-body">
+                    <!-- Patient Selector -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Select Target Patient <span class="text-danger">*</span></label>
+                        <select name="patient_id" class="form-select" required>
+                            <option value="">-- Choose Patient --</option>
+                            {% for p in patients %}
+                                <option value="{{ p.id }}">{{ p.last_name }}, {{ p.first_name }} (#{{ p.id }}) — Drug Allergies: {{ p.drug_sensitivities or 'None' }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Order Type Selector -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Order Modality / Service <span class="text-danger">*</span></label>
+                        <select name="order_type" id="modal_order_type" class="form-select" onchange="toggleOrderFields()" required>
+                            <option value="lab">Laboratory Diagnostic Test</option>
+                            <option value="radiology">Radiology / AI X-Ray Study</option>
+                            <option value="pharmacy">Pharmacy Prescription</option>
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Fields: Lab -->
+                    <div id="field_lab" class="mb-3">
+                        <label class="form-label fw-bold small">Laboratory Panel / Test</label>
+                        <select name="test_name" class="form-select">
+                            <option value="Complete Blood Count (CBC)">Complete Blood Count (CBC)</option>
+                            <option value="Comprehensive Metabolic Panel (CMP)">Comprehensive Metabolic Panel (CMP)</option>
+                            <option value="Lipid Profile">Lipid Profile</option>
+                            <option value="Hemoglobin A1c">Hemoglobin A1c</option>
+                            <option value="Renal Function & Serum Electrolytes">Renal Function & Serum Electrolytes</option>
+                            <option value="Urinalysis & Culture">Urinalysis & Culture</option>
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Fields: Radiology -->
+                    <div id="field_radiology" class="mb-3 d-none">
+                        <label class="form-label fw-bold small">Radiology Imaging Study</label>
+                        <select name="imaging_type" class="form-select">
+                            <option value="X-Ray Wrist / Hand (AP & Lateral)">X-Ray Wrist / Hand (AP & Lateral)</option>
+                            <option value="X-Ray Lower Extremity / Leg">X-Ray Lower Extremity / Leg</option>
+                            <option value="X-Ray Shoulder / Clavicle">X-Ray Shoulder / Clavicle</option>
+                            <option value="X-Ray Hip / Pelvis">X-Ray Hip / Pelvis</option>
+                            <option value="X-Ray Chest (PA & Lateral)">X-Ray Chest (PA & Lateral)</option>
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Fields: Pharmacy -->
+                    <div id="field_pharmacy" class="mb-3 d-none">
+                        <div class="mb-2">
+                            <label class="form-label fw-bold small">Medication Name</label>
+                            <input type="text" name="medication_name" class="form-control" placeholder="e.g. Amoxicillin, Lisinopril, Metformin">
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label fw-bold small">Dosage</label>
+                                <input type="text" name="dosage" class="form-control" placeholder="e.g. 500mg, 10mg">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold small">Frequency</label>
+                                <input type="text" name="frequency" class="form-control" placeholder="e.g. Twice daily with meals">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane me-1"></i>Dispatch Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleOrderFields() {
+    const val = document.getElementById('modal_order_type').value;
+    document.getElementById('field_lab').classList.toggle('d-none', val !== 'lab');
+    document.getElementById('field_radiology').classList.toggle('d-none', val !== 'radiology');
+    document.getElementById('field_pharmacy').classList.toggle('d-none', val !== 'pharmacy');
+}
+</script>
+{% endblock %}

@@ -24,8 +24,9 @@ def serve_upload(filename):
     return send_from_directory(upload_root, filename)
 
 
-@radiology_bp.route('/')
-@radiology_bp.route('/dashboard')
+@radiology_bp.route('', strict_slashes=False)
+@radiology_bp.route('/', strict_slashes=False)
+@radiology_bp.route('/dashboard', strict_slashes=False)
 @login_required
 @roles_required('Doctor', 'Admin')
 def dashboard():

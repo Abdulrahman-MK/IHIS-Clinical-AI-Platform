@@ -36,7 +36,8 @@ def create_app():
     # 2. Open the App Context and Register Everything Else
     with app.app_context():
         # Import database tables so SQLAlchemy knows they exist
-        from models.user import User, Role, AuditLog
+        from models.user import User, Role
+        from models.audit_log import AuditLog
         from models.patient import Patient, VitalSigns, MedicalRecord
         from models.specialties import Doctor, Specialty, RehabSession
         from models.dental import DentalRecord, DentalChart, DentalProcedure
