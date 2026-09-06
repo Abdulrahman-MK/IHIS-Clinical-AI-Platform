@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 600px;">
+    <h2>Diagnostic Output</h2>
+
+    <div class="card shadow-sm mt-3">
+        <div class="card-body text-center p-4">
+            <h4 class="card-title mb-3">Classification Outcome</h4>
+            
+            {% if result.label == 'Malignant Melanoma' %}
+                <span class="badge bg-danger p-3 fs-5 text-white mb-3">High Risk: {{ result.label }}</span>
+            {% else %}
+                <span class="badge bg-success p-3 fs-5 text-white mb-3">Benign: {{ result.label }}</span>
+            {% endif %}
+
+            <p class="fs-5 mt-2">Model Confidence: <strong>{{ result.confidence }}%</strong></p>
+
+            <div class="alert alert-warning text-start mt-4" role="alert">
+                <small><strong>Clinical Disclaimer:</strong> AI model predictions are intended strictly for clinical decision support and preliminary screening. All automated findings must be independently verified by a licensed dermatologist.</small>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{{ url_for('dermatology.analyze_lesion') }}" class="btn btn-outline-secondary">Analyze Another Image</a>
+                <button onclick="window.print()" class="btn btn-primary">Print Finding</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

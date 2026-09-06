@@ -56,11 +56,12 @@
                 <div class="card-body bg-white overflow-auto" style="min-height: 400px;">
                     {% if review_result %}
                         <div id="formatted-review-content"></div>
+                        <textarea id="raw-review-content" class="d-none">{{ review_result|default('', true) }}</textarea>
                         <!-- Load Marked.js to format markdown response -->
                         <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
                         <script>
                             document.addEventListener("DOMContentLoaded", function() {
-                                const rawText = {{ review_result | tojson }};
+                                const rawText = document.getElementById('raw-review-content').value;
                                 document.getElementById('formatted-review-content').innerHTML = marked.parse(rawText);
                             });
                         </script>

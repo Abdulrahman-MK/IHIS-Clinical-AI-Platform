@@ -52,6 +52,11 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ url_for('dermatology.analyze_lesion') }}" class="nav-link {% if '/dermatology' in request.path %}active{% endif %}">
+                            <i class="fa-solid fa-microscope me-2"></i> Dermatology AI
+                        </a>
+                    </li>
+                    <li>
                         <a href="/pharmacy/review" class="nav-link {% if '/pharmacy' in request.path %}active{% endif %}">
                             <i class="fa-solid fa-capsules me-2"></i> Pharmacy Safety
                         </a>

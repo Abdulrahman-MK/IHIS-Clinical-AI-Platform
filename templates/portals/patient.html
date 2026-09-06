@@ -1,3 +1,263 @@
-<h3>Patient Portal Workspace</h3>
-<p>Welcome, {{ current_user.username }}! This is your safe health record environment.</p>
-<a href="{{ url_for('auth.logout') }}">Secure Logout</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard - IHIS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}"><i class="fas id-card me-2"></i>IHIS Portal</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-1"></i> Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <div class="container my-5">
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <h1 class="h3 fw-bold text-dark"><i class="fas fa-user-injured text-primary me-2"></i> Patient Dashboard</h1>
+                <p class="text-muted">Welcome back, <strong>
+                    {% if profile.name %}
+                        {{ profile.name }}
+                    {% elif profile.full_name %}
+                        {{ profile.full_name }}
+                    {% elif profile.first_name or profile.last_name %}
+                        {{ profile.first_name | default('', true) }} {{ profile.last_name | default('', true) }}
+                    {% elif profile.username %}
+                        {{ profile.username }}
+                    {% else %}
+                        Patient
+                    {% endif %}
+                </strong></p>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show shadow-sm" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Profile & Information Card -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-dark text-white py-3">
+                        <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i> Profile Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted small fw-bold">Full Name</label>
+                                <p class="fs-6 mb-0">
+                                    {% if profile.name %}
+                                        {{ profile.name }}
+                                    {% elif profile.full_name %}
+                                        {{ profile.full_name }}
+                                    {% elif profile.first_name or profile.last_name %}
+                                        {{ profile.first_name | default('', true) }} {{ profile.last_name | default('', true) }}
+                                    {% elif profile.username %}
+                                        {{ profile.username }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted small fw-bold">Email</label>
+                                <p class="fs-6 mb-0">{{ profile.email | default(profile.mail, true) | default(profile.email_address, true) | default('N/A', true) }}</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted small fw-bold">Phone</label>
+                                <p class="fs-6 mb-0">{{ profile.phone | default(profile.phone_number, true) | default(profile.mobile, true) | default('N/A', true) }}</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted small fw-bold">Patient ID</label>
+                                <p class="fs-6 mb-0">#{{ profile.id }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clinical Records / Medical History Section -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="mb-0"><i class="fas fa-file-medical me-2"></i> Clinical Records & History</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="py-3 ps-4">Record ID</th>
+                                        <th class="py-3">Date / Timestamp</th>
+                                        <th class="py-3">Summary / Diagnosis</th>
+                                        <th class="py-3 text-end pe-4">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if clinical_records %}
+                                        {% for record in clinical_records %}
+                                        <tr>
+                                            <td class="ps-4 fw-semibold text-secondary">#{{ record.id }}</td>
+                                            <td>{{ record.created_at.strftime('%Y-%m-%d %H:%M') if record.created_at else 'N/A' }}</td>
+                                            <td>{{ record.summary | default(record.diagnosis, true) | default('Clinical Examination', true) }}</td>
+                                            <td class="text-end pe-4">
+                                                {% if record.view_url %}
+                                                    <a href="{{ record.view_url }}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye me-1"></i> View
+                                                    </a>
+                                                {% else %}
+                                                    <span class="text-muted small">Not Available</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="4" class="text-center py-4 text-muted">
+                                                <i class="fas fa-folder-open fa-2x mb-2 text-secondary opacity-50"></i>
+                                                <p class="mb-0">No clinical records found.</p>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointments Section -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-secondary text-white py-3">
+                        <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i> Appointments</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="py-3 ps-4">Date & Time</th>
+                                        <th class="py-3">Doctor / Practitioner</th>
+                                        <th class="py-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if appointments %}
+                                        {% for apt in appointments %}
+                                        <tr>
+                                            <td class="ps-4 fw-semibold">{{ apt.date.strftime('%Y-%m-%d %H:%M') if apt.date else apt.datetime | default('N/A', true) }}</td>
+                                            <td>{{ apt.doctor_name | default('Dr. Assigned', true) }}</td>
+                                            <td>
+                                                {% if apt.status == 'Confirmed' or apt.status == 'Scheduled' %}
+                                                    <span class="badge bg-success">{{ apt.status }}</span>
+                                                {% elif apt.status == 'Completed' %}
+                                                    <span class="badge bg-info text-dark">{{ apt.status }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ apt.status | default('Pending', true) }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="3" class="text-center py-4 text-muted">
+                                                <i class="fas fa-calendar-times fa-2x mb-2 text-secondary opacity-50"></i>
+                                                <p class="mb-0">No upcoming or past appointments found.</p>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Billing & Invoices Section -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-success text-white py-3">
+                        <h5 class="mb-0"><i class="fas fa-file-invoice-dollar me-2"></i> Billing & Invoices</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="py-3 ps-4">Invoice ID</th>
+                                        <th class="py-3">Date</th>
+                                        <th class="py-3">Description</th>
+                                        <th class="py-3">Amount</th>
+                                        <th class="py-3">Payment Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if invoices %}
+                                        {% for inv in invoices %}
+                                        <tr>
+                                            <td class="ps-4 fw-semibold text-secondary">#{{ inv.id }}</td>
+                                            <td>{{ inv.date.strftime('%Y-%m-%d') if inv.date else 'N/A' }}</td>
+                                            <td>{{ inv.description | default('Treatment Invoice', true) }}</td>
+                                            <td class="fw-bold">${{ inv.amount | default('0.00', true) }}</td>
+                                            <td>
+                                                {% if inv.status == 'Paid' %}
+                                                    <span class="badge bg-success">Paid</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning text-dark">{{ inv.status | default('Unpaid', true) }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4 text-muted">
+                                                <i class="fas fa-receipt fa-2x mb-2 text-secondary opacity-50"></i>
+                                                <p class="mb-0">No invoices found.</p>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

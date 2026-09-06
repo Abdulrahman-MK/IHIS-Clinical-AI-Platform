@@ -26,11 +26,10 @@ def login():
             login_user(user)
             
             # Create a security audit log entry
-            log = AuditLog(
-                user_id=user.id, 
-                action="USER_LOGGED_IN", 
-                ip_address=request.remote_addr
-            )
+            log = AuditLog()
+            log.ip_address = request.remote_addr
+            log.action = "USER_LOGGED_IN"
+            log.user_id = user.id
             db.session.add(log)
             db.session.commit()
             
@@ -63,14 +62,13 @@ def dashboard_redirect():
 @auth_bp.route('/logout')
 @login_required
 def logout():
-    log = AuditLog(
-        user_id=current_user.id, 
-        action="USER_LOGGED_OUT", 
-        ip_address=request.remote_addr
-    )
+    log = AuditLog()
+    log.user_id = current_user.id
+    log.ip_address = request.remote_addr
+    log.action = "USER_LOGGED_OUT"
     db.session.add(log)
     db.session.commit()
-    
+
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect(url_for('auth.login'))

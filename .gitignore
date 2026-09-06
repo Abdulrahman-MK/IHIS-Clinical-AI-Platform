@@ -220,5 +220,7 @@ __marimo__/
 # Uploads and temporary test outputs
 uploads/*
 !uploads/.gitkeep
-!uploads/radiology/
-!uploads/radiology/.gitkeep
+uploads/radiology/scans/*
+uploads/radiology/results/*
+!uploads/radiology/scans/.gitkeep
+!uploads/radiology/results/.gitkeep
