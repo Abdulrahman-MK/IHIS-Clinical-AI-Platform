@@ -224,3 +224,8 @@ uploads/radiology/scans/*
 uploads/radiology/results/*
 !uploads/radiology/scans/.gitkeep
 !uploads/radiology/results/.gitkeep
+
+# RAG System
+.env
+chroma_db/
+

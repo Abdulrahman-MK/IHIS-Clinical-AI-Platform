@@ -12,3 +12,10 @@ torch
 torchvision
 timm>=1.0.0
 pytest
+
+
+chromadb
+sentence-transformers
+google-generativeai
+pypdf
+langchain-text-splitters

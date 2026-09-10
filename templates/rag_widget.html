@@ -1,0 +1,222 @@
+﻿<!-- Marked.js for Markdown parsing -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<style>
+    /* RAG Widget Styles */
+    #ragWidget {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 350px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        display: flex;
+        flex-direction: column;
+        z-index: 9999;
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    #ragWidget.maximized {
+        width: 800px;
+        height: 80vh;
+        bottom: 10vh;
+        right: calc(50% - 400px); /* Center it */
+    }
+
+    .rag-header {
+        background: #0d6efd;
+        color: white;
+        padding: 10px 15px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: bold;
+    }
+
+    .rag-header .controls button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        margin-left: 5px;
+    }
+
+    #ragContent {
+        display: none;
+        flex-direction: column;
+        height: 400px; /* Default height */
+    }
+
+    #ragWidget.maximized #ragContent {
+        height: calc(100% - 44px); /* Subtract header height */
+    }
+
+    .rag-body {
+        flex-grow: 1;
+        padding: 15px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: #f8f9fa;
+    }
+
+    .rag-message {
+        max-width: 85%;
+        padding: 10px 15px;
+        border-radius: 15px;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        word-wrap: break-word;
+    }
+
+    .rag-message p:last-child { margin-bottom: 0; }
+    .rag-message ul, .rag-message ol { margin-bottom: 0.5rem; }
+
+    .rag-message.user {
+        background-color: #0d6efd;
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 0;
+    }
+
+    .rag-message.bot {
+        background-color: #e9ecef;
+        color: #212529;
+        align-self: flex-start;
+        border-bottom-left-radius: 0;
+    }
+
+    .rag-input-container {
+        padding: 10px;
+        border-top: 1px solid #dee2e6;
+        background: white;
+    }
+</style>
+
+<div id="ragWidget">
+    <div class="rag-header" onclick="toggleRag()">
+        <span><i class="fa-solid fa-robot me-2"></i> GAHAR Assistant</span>
+        <div class="controls">
+            <button onclick="maximizeRag(event)" title="Maximize/Minimize"><i class="fa-solid fa-expand"></i></button>
+        </div>
+    </div>
+    <div id="ragContent">
+        <div class="rag-body" id="ragBody">
+            <div class="rag-message bot" dir="ltr">
+                Hello! Ask me any emergency protocol or guidelines from the GAHAR Handbook.
+            </div>
+        </div>
+        <div class="rag-input-container">
+            <form id="ragForm" class="d-flex gap-2 mb-0">
+                <input type="text" id="ragInput" class="form-control form-control-sm" placeholder="Type a question..." autocomplete="off" required>
+                <button type="submit" class="btn btn-primary btn-sm" id="ragSendBtn">Send</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ragWidget = document.getElementById('ragWidget');
+    const ragContent = document.getElementById('ragContent');
+    const ragBody = document.getElementById('ragBody');
+    const ragForm = document.getElementById('ragForm');
+    const ragInput = document.getElementById('ragInput');
+    const ragSendBtn = document.getElementById('ragSendBtn');
+
+    let isOpen = false;
+
+    function toggleRag() {
+        isOpen = !isOpen;
+        ragContent.style.display = isOpen ? 'flex' : 'none';
+        if(isOpen) ragInput.focus();
+    }
+
+    function maximizeRag(event) {
+        event.stopPropagation(); // prevent triggering toggleRag
+        if (!isOpen) {
+            toggleRag();
+        }
+        ragWidget.classList.toggle('maximized');
+    }
+
+    function isArabic(text) {
+        return /[\u0600-\u06FF]/.test(text);
+    }
+
+    ragInput.addEventListener('input', function() {
+        if (isArabic(this.value)) this.setAttribute('dir', 'rtl');
+        else if (this.value.trim() !== '') this.setAttribute('dir', 'ltr');
+        else this.removeAttribute('dir');
+    });
+
+    function addRagMessage(text, sender) {
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('rag-message', sender);
+        
+        if (sender === 'bot') {
+            msgDiv.innerHTML = marked.parse(text);
+        } else {
+            msgDiv.innerText = text;
+        }
+
+        if (isArabic(text)) {
+            msgDiv.setAttribute('dir', 'rtl');
+            if(sender === 'bot') {
+                msgDiv.style.alignSelf = 'flex-end';
+                msgDiv.style.borderBottomLeftRadius = '15px';
+                msgDiv.style.borderBottomRightRadius = '0';
+            } else {
+                msgDiv.style.alignSelf = 'flex-start';
+                msgDiv.style.borderBottomRightRadius = '15px';
+                msgDiv.style.borderBottomLeftRadius = '0';
+            }
+        } else {
+            msgDiv.setAttribute('dir', 'ltr');
+        }
+
+        ragBody.appendChild(msgDiv);
+        ragBody.scrollTop = ragBody.scrollHeight;
+    }
+
+    ragForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const message = ragInput.value.trim();
+        if (!message) return;
+
+        addRagMessage(message, 'user');
+        ragInput.value = '';
+        ragInput.removeAttribute('dir');
+
+        ragInput.disabled = true;
+        ragSendBtn.disabled = true;
+        ragSendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            });
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                addRagMessage(data.response, 'bot');
+            } else {
+                addRagMessage('Error: ' + (data.error || 'Something went wrong.'), 'bot');
+            }
+        } catch (error) {
+            addRagMessage('Network Error: Could not reach the server.', 'bot');
+        } finally {
+            ragInput.disabled = false;
+            ragSendBtn.disabled = false;
+            ragSendBtn.innerText = 'Send';
+            ragInput.focus();
+        }
+    });
+</script>
