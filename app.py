@@ -54,6 +54,7 @@ def create_app():
         from routes.pharmacy import pharmacy_bp
         from routes.radiology import radiology_bp
         from routes.dermatology import dermatology_bp
+        from routes.dental import dental_bp
         from routes.rag import rag_bp
         
         # Automatically kick users to the login page if they visit the base URL
@@ -69,6 +70,7 @@ def create_app():
         app.register_blueprint(pharmacy_bp)
         app.register_blueprint(radiology_bp)
         app.register_blueprint(dermatology_bp)
+        app.register_blueprint(dental_bp)
         app.register_blueprint(rag_bp)
 
     # 5. Finally, return the completely built application

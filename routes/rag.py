@@ -1,4 +1,4 @@
-﻿from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify
 import os
 import google.generativeai as genai
 import chromadb
@@ -10,11 +10,16 @@ rag_bp = Blueprint('rag', __name__)
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-    try:
-        llm_model = genai.GenerativeModel('gemini-3.5-flash')
-    except Exception as e:
-        print('Failed to init gemini model:', e)
-        llm_model = None
+    candidate_models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-pro', 'gemini-3.5-flash']
+    llm_model = None
+    for model_name in candidate_models:
+        try:
+            llm_model = genai.GenerativeModel(model_name)
+            break
+        except Exception as e:
+            continue
+    if not llm_model:
+        print('Warning: Could not initialize any Gemini model variant.')
 else:
     llm_model = None
 

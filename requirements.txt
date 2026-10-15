@@ -12,8 +12,9 @@ torch
 torchvision
 timm>=1.0.0
 pytest
-
-
+tensorflow
+Pillow
+numpy
 chromadb
 sentence-transformers
 google-generativeai
